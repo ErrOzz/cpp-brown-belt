@@ -1,0 +1,6 @@
+/.metadata/
+*/.gitignore
+*/.cproject
+*/.project
+*/.settings
+*.xml
