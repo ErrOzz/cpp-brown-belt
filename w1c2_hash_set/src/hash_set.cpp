@@ -2,6 +2,8 @@
 
 #include <forward_list>
 #include <iterator>
+#include <vector>
+#include <iostream>
 
 using namespace std;
 
@@ -11,18 +13,41 @@ public:
   using BucketList = forward_list<Type>;
 
 public:
-  explicit HashSet(size_t num_buckets, const Hasher& hasher = {}) : num_buckets(num_buckets), hasher(hasher) {
+  explicit HashSet(size_t num_buckets, const Hasher& hasher = {})
+  	  	  	  	  : hasher(hasher),
+					data(num_buckets) {}
 
+  void Add(const Type& value) {
+    if (!Has(value)) {
+      GetBucket(value).push_front(value);
+    }
   }
 
-  void Add(const Type& value);
-  bool Has(const Type& value) const;
-  void Erase(const Type& value);
-  const BucketList& GetBucket(const Type& value) const;
+  bool Has(const Type& value) const {
+    for (const auto& item : GetBucket(value)) {
+      if (item == value) return true;
+    }
+	  return false;
+  }
+
+  void Erase(const Type& value) {
+    if (Has(value)) {
+      GetBucket(value).remove(value);
+    }
+  }
+
+  const BucketList& GetBucket(const Type& value) const {
+    return data[hasher(value) % data.size()];
+  }
+
+  BucketList& GetBucket(const Type& value) {
+    return data[hasher(value) % data.size()];
+  }
 
 private:
-  size_t num_buckets;
-  Hasher& hasher;
+//  size_t num_buckets;
+  const Hasher& hasher;
+  vector<BucketList> data;
 };
 
 struct IntHasher {
