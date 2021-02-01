@@ -7,10 +7,7 @@ using namespace std;
 
 
 struct Node {
-  Node(int v, Node* p)
-    : value(v)
-    , parent(p)
-  {}
+  Node(int v, Node* p) : value(v), parent(p) {}
 
   int value;
   Node* left = nullptr;
@@ -46,7 +43,20 @@ private:
 
 
 Node* Next(Node* me) {
-
+  if (me->right != nullptr) {
+    me = me->right;
+    while (me->left != nullptr) {
+      me = me->left;
+    }
+    return me;
+  }
+  while (me->parent != nullptr) {
+    if (me->parent->left == me) {
+      return me->parent;
+    }
+    me = me->parent;
+  }
+  return nullptr;
 }
 
 
