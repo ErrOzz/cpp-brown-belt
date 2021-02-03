@@ -10,7 +10,9 @@ struct Address {
   int building;
 
   bool operator==(const Address& other) const {
-    // реализуйте оператор
+    return city == other.city &&
+           street == other.street &&
+           building == other.building;
   }
 };
 
@@ -21,7 +23,10 @@ struct Person {
   Address address;
 
   bool operator==(const Person& other) const {
-    // реализуйте оператор
+    return name == other.name &&
+           height == other.height &&
+           weight == other.weight &&
+           address == other.address;
   }
 };
 
