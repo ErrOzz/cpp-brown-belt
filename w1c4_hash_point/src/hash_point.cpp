@@ -19,14 +19,12 @@ struct Point3D {
 
 struct Hasher {
   size_t operator() (const Point3D& point) const {
-    size_t hash_x = hash<CoordType>{} (point.x);
-    size_t hash_y = hash<CoordType>{} (point.y);
-    size_t hash_z = hash<CoordType>{} (point.z);
+    const hash<CoordType> coord_hasher;
 
-    size_t prime_var = 37;
-    size_t hash_combined = (hash_x * hash_x) * prime_var +
-                            hash_y * prime_var + hash_z;
-    return hash_combined;
+    size_t var = 13; // дает неплохой результат, не хуже чем дает 2946901
+    return var * var * coord_hasher(point.x) +
+                 var * coord_hasher(point.y) +
+                       coord_hasher(point.z);
   }
 };
 
@@ -161,7 +159,7 @@ void TestDistribution() {
     pearson_stat +=
         count_diff * count_diff / static_cast<double>(perfect_bucket_size);
   }
-
+  cerr << "Pearson stat value: " << pearson_stat << endl;
   // проверяем равномерность распределения методом согласия Пирсона
   // со статистической значимостью 0.95:
   //
