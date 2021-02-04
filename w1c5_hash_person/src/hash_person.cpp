@@ -31,11 +31,28 @@ struct Person {
 };
 
 struct AddressHasher {
-  // реализуйте структуру
+  size_t operator() (const Address& address) const {
+    const hash<string> string_hash;
+    const hash<int> int_hash;
+    const size_t var = 10111;
+    return var * var * string_hash(address.city) +
+               var * string_hash(address.street) +
+                      int_hash(address.building);
+  }
 };
 
 struct PersonHasher {
-  // реализуйте структуру
+  size_t operator() (const Person& person) const {
+    const hash<string> string_hasher;
+    const hash<int> int_hasher;
+    const hash<double> double_hasher;
+    const AddressHasher address_hasher;
+    const size_t var = 10111;
+    return var * var * var * string_hasher(person.name) +
+                  var * var * int_hasher(person.height) +
+                     var * double_hasher(person.weight) +
+                         address_hasher(person.address);
+  }
 };
 
 // сгенерированы командой:
