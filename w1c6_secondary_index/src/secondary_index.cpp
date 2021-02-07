@@ -23,10 +23,10 @@ public:
   bool Put(const Record& record) {
     Id id = record.id;
     if (data.count(id)) return false;
-    data[id] = record;
-    timestamp_sorted.insert({record.timestamp, id});
-    karma_sorted.insert({record.karma, id});
-    name_sorted.insert({record.user, id});
+    Record* record_ptr = &(data[id] = record);
+    timestamp_sorted.insert({record.timestamp, record_ptr});
+    karma_sorted.insert({record.karma, record_ptr});
+    name_sorted.insert({record.user, record_ptr});
     return true;
   }
   const Record* GetById(const string& id) const {
@@ -61,15 +61,15 @@ public:
 private:
   using Id = string;
   unordered_map<Id, Record> data;
-  multimap<int, Id> timestamp_sorted;
-  multimap<int, Id> karma_sorted;
-  multimap<string, Id> name_sorted;
+  multimap<int, Record*> timestamp_sorted;
+  multimap<int, Record*> karma_sorted;
+  multimap<string, Record*> name_sorted;
 
   template <typename Container, typename Key>
   void RemoveSortedId(Container& container, Key& key, const Id& id) {
     auto range = container.equal_range(key);
     for (auto i = range.first; i!= range.second; ++i) {
-      if (i->second == id) {
+      if (i->second->id == id) {
         container.erase(i);
         break;
       }
@@ -83,7 +83,7 @@ private:
     auto begin_it = container.lower_bound(low);
     const auto end_it = container.upper_bound(high);
     while (begin_it != end_it) {
-      if (!callback(data.at(begin_it->second))) break;
+      if (!callback(*(begin_it->second))) break;
       ++begin_it;
     }
   }
@@ -206,6 +206,11 @@ void TestRandom() {
     }
     ASSERT(!fail);
   }
+  /*  Put records to Database: 700 - 800 ms
+   *  Full RangeByKarma iterating: 70 - 100 ms
+   *  Full RangeByTimestamp iterating: 70 - 100 ms
+   *  Erasing all records from Database: 700 - 800 ms
+   */
 }
 
 int main() {
