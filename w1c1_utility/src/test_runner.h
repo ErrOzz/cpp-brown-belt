@@ -18,12 +18,12 @@ namespace TestRunnerPrivate {
   std::ostream& PrintMap(std::ostream& os, const Map<K, V>& m) {
     os << "{";
     bool first = true;
-    for (const auto& kv : m) {
+    for (const auto& [k, v] : m) {
       if (!first) {
         os << ", ";
       }
       first = false;
-      os << kv.first << ": " << kv.second;
+      os << k << ": " << v;
     }
     return os << "}";
   }
