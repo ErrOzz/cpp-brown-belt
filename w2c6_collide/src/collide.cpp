@@ -15,7 +15,7 @@ class Unit : public GameObject {
 public:
   explicit Unit(geo2d::Point position) : position(move(position)) {}
 
-  const geo2d::Point& GetGeo() const { return position; }
+//  const geo2d::Point& GetGeo() const { return position; }
 
   bool Collide(const GameObject& that) const override {
     return that.CollideWith(*this);
@@ -25,15 +25,16 @@ public:
     return geo2d::Collide(this->position, that.position);
   }
   bool CollideWith(const Building& that) const override {
-    return geo2d::Collide(this->position, that.GetGeo());
+    return geo2d::Collide(that.geometry, this->position);
+    return true;
   }
-  bool CollideWith(const Tower& that) const override {
-    return geo2d::Collide(this->position, that.geometry);
-  }
-  bool CollideWith(const Fence& that) const override {
-    return geo2d::Collide(this->position, that.geometry);
-  }
-private:
+//  bool CollideWith(const Tower& that) const override {
+//    return geo2d::Collide(this->position, that.geometry);
+//  }
+//  bool CollideWith(const Fence& that) const override {
+//    return geo2d::Collide(this->position, that.geometry);
+//  }
+//protected:
   const geo2d::Point position;
 };
 
@@ -41,13 +42,13 @@ class Building : public GameObject {
 public:
   explicit Building(geo2d::Rectangle geometry) : geometry(move(geometry)) {}
 
-  const geo2d::Rectangle& GetGeo() const { return geometry; }
+//  const geo2d::Rectangle& GetGeo() const { return geometry; }
 
   bool Collide(const GameObject& that) const override {
     return that.CollideWith(*this);
   }
   bool CollideWith(const Unit& that) const override {
-    return geo2d::Collide(this->geometry, that.GetGeo());
+    return geo2d::Collide(this->geometry, that.position);
   }
   bool CollideWith(const Building& that) const override {
     if (this == &that) { return false; }
@@ -59,7 +60,7 @@ public:
   bool CollideWith(const Fence& that) const override {
     return geo2d::Collide(this->geometry, that.geometry);
   }
-private:
+public:
   const geo2d::Rectangle geometry;
 };
 
