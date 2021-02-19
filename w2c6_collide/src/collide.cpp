@@ -11,19 +11,63 @@ using namespace std;
 // Определите классы Unit, Building, Tower и Fence так, чтобы они наследовались от
 // GameObject и реализовывали его интерфейс.
 
-class Unit {
+class Unit : public GameObject {
 public:
-  explicit Unit(geo2d::Point position);
+  explicit Unit(geo2d::Point position) : position(move(position)) {}
+
+  const geo2d::Point& GetGeo() const { return position; }
+
+  bool Collide(const GameObject& that) const override {
+    return that.CollideWith(*this);
+  }
+  bool CollideWith(const Unit& that) const override {
+    if (this == &that) { return false; }
+    return geo2d::Collide(this->position, that.position);
+  }
+  bool CollideWith(const Building& that) const override {
+    return geo2d::Collide(this->position, that.GetGeo());
+  }
+  bool CollideWith(const Tower& that) const override {
+    return geo2d::Collide(this->position, that.geometry);
+  }
+  bool CollideWith(const Fence& that) const override {
+    return geo2d::Collide(this->position, that.geometry);
+  }
+private:
+  const geo2d::Point position;
 };
 
-class Building {
+class Building : public GameObject {
 public:
-  explicit Building(geo2d::Rectangle geometry);
+  explicit Building(geo2d::Rectangle geometry) : geometry(move(geometry)) {}
+
+  const geo2d::Rectangle& GetGeo() const { return geometry; }
+
+  bool Collide(const GameObject& that) const override {
+    return that.CollideWith(*this);
+  }
+  bool CollideWith(const Unit& that) const override {
+    return geo2d::Collide(this->geometry, that.GetGeo());
+  }
+  bool CollideWith(const Building& that) const override {
+    if (this == &that) { return false; }
+    return geo2d::Collide(this->geometry, that.geometry);
+  }
+  bool CollideWith(const Tower& that) const override {
+    return geo2d::Collide(this->geometry, that.geometry);
+  }
+  bool CollideWith(const Fence& that) const override {
+    return geo2d::Collide(this->geometry, that.geometry);
+  }
+private:
+  const geo2d::Rectangle geometry;
 };
 
 class Tower {
 public:
-  explicit Tower(geo2d::Circle geometry);
+  explicit Tower(geo2d::Circle geometry) : geometry(move(geometry)) {}
+private:
+  const geo2d::Circle geometry;
 };
 
 class Fence {
