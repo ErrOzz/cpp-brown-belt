@@ -25,8 +25,7 @@ public:
     return geo2d::Collide(this->position, that.position);
   }
   bool CollideWith(const Building& that) const override {
-    return geo2d::Collide(that.geometry, this->position);
-    return true;
+    return Collide(that);
   }
 //  bool CollideWith(const Tower& that) const override {
 //    return geo2d::Collide(this->position, that.geometry);
@@ -34,7 +33,7 @@ public:
 //  bool CollideWith(const Fence& that) const override {
 //    return geo2d::Collide(this->position, that.geometry);
 //  }
-//protected:
+// protected:
   const geo2d::Point position;
 };
 
