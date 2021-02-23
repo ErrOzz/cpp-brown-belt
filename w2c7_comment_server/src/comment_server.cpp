@@ -38,6 +38,43 @@ pair<size_t, string> ParseIdAndContent(const string& body) {
   return {FromString<size_t>(id_string), content};
 }
 
+//------------------------------------------------------------------------------
+//  Refactored code block start
+
+enum class HttpCode {
+  Ok = 200,
+  NotFound = 404,
+  Found = 302,
+};
+
+class HttpResponse {
+public:
+  explicit HttpResponse(HttpCode code) : code(move(code)) {}
+
+  HttpResponse& AddHeader(string name, string value) {
+    headers.emplace(make_pair(move(name), move(value)));
+    return *this;
+  }
+  HttpResponse& SetContent(string a_content) {
+    content = move(a_content);
+    return *this;
+  }
+  HttpResponse& SetCode(HttpCode a_code) {
+    code = move(a_code);
+    return *this;
+  }
+
+  friend ostream& operator << (ostream& output, const HttpResponse& resp);
+
+private:
+  HttpCode code;
+  unordered_multimap<string, string> headers;
+  string content;
+};
+
+//  Refactored code block finish
+//------------------------------------------------------------------------------
+
 struct LastCommentInfo {
   size_t user_id, consecutive_count;
 };
