@@ -64,9 +64,29 @@ public:
     return *this;
   }
 
-  friend ostream& operator << (ostream& output, const HttpResponse& resp);
+  friend ostream& operator << (ostream& output, const HttpResponse& resp) {
+    auto code_comment = [&resp] {
+      switch (resp.code) {
+        case HttpCode::Ok:
+          return "200 OK";
+        case HttpCode::NotFound:
+          return "404 Not found";
+        case HttpCode::Found:
+          return "302 Found";
+      }
+    };
+    output << version << " " << code_comment() << '\n';
+    for (const auto& [header, value] : resp.headers) {
+      output << header << ": " << value << '\n';
+    }
+    if (size_t cnt_length = resp.content.size(); !cnt_length) {
+      output << "Content-length: " << cnt_length << "\n\n" << resp.content << '\n';
+    }
+    return output;
+  }
 
 private:
+  const inline static string version = "HTTP/1.1";
   HttpCode code;
   unordered_multimap<string, string> headers;
   string content;
