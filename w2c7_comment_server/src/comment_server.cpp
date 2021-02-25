@@ -56,7 +56,10 @@ public:
     return *this;
   }
   HttpResponse& SetContent(string a_content) {
-    content = move(a_content);
+    if (size_t cnt_length = a_content.size(); cnt_length) {
+      content = move(a_content);
+      AddHeader("Content-length", to_string(cnt_length));
+    }
     return *this;
   }
   HttpResponse& SetCode(HttpCode a_code) {
@@ -65,8 +68,8 @@ public:
   }
 
   friend ostream& operator << (ostream& output, const HttpResponse& resp) {
-    auto code_comment = [&resp] {
-      switch (resp.code) {
+    auto code_comment = [] (const HttpCode& code) {
+      switch (code) {
         case HttpCode::Ok:
           return "200 OK";
         case HttpCode::NotFound:
@@ -74,13 +77,11 @@ public:
         case HttpCode::Found:
           return "302 Found";
       }
+      return "404 Not found";
     };
-    output << version << " " << code_comment() << '\n';
+    output << version << " " << code_comment(resp.code) << '\n';
     for (const auto& [header, value] : resp.headers) {
       output << header << ": " << value << '\n';
-    }
-    if (size_t cnt_length = resp.content.size(); !cnt_length) {
-      output << "Content-length: " << cnt_length << "\n\n" << resp.content << '\n';
     }
     return output;
   }
@@ -106,6 +107,58 @@ private:
   unordered_set<size_t> banned_users;
 
 public:
+//------------------------------------------------------------------------------
+//  Refactored code block start
+
+  HttpResponse ServeRequest(const HttpRequest& req) {
+    if (req.method == "POST") {
+      if (req.path == "/add_user") {
+        comments_.emplace_back();
+        return HttpResponse(HttpCode::Ok).SetContent(to_string(comments_.size() - 1));
+      } else if (req.path == "/add_comment") {
+        auto [user_id, comment] = ParseIdAndContent(req.body);
+
+        if (!last_comment || last_comment->user_id != user_id) {
+          last_comment = LastCommentInfo {user_id, 1};
+        } else if (++last_comment->consecutive_count > 3) {
+          banned_users.insert(user_id);
+        }
+
+        if (banned_users.count(user_id) == 0) {
+          comments_[user_id].push_back(comment);
+          return HttpResponse(HttpCode::Ok);
+        } else {
+          return HttpResponse(HttpCode::Found).AddHeader("Location", "/captcha");
+        }
+      } else if (req.path == "/checkcaptcha") {
+        if (auto [user_id, response] = ParseIdAndContent(req.body); response == "42") {
+          banned_users.erase(user_id);
+          if (last_comment && last_comment->user_id == user_id) {
+            last_comment.reset();
+          }
+          return HttpResponse(HttpCode::Ok);
+        }
+      }
+    } else if (req.method == "GET") {
+      if (req.path == "/user_comments") {
+        size_t user_id = FromString<size_t>(req.get_params.at("user_id"));
+        string user_comments;
+        for (const string& comment : comments_[user_id]) {
+          user_comments += comment + '\n';
+        }
+        return HttpResponse(HttpCode::Ok).SetContent(user_comments);
+      } else if (req.path == "/captcha") {
+        return HttpResponse(HttpCode::Ok).SetContent(
+          "What's the answer for The Ultimate Question of Life, the Universe, and Everything?"
+        );
+      }
+    }
+    return HttpResponse(HttpCode::NotFound);
+  }
+
+//  Refactored code block finish
+//------------------------------------------------------------------------------
+
   void ServeRequest(const HttpRequest& req, ostream& os) {
     if (req.method == "POST") {
       if (req.path == "/add_user") {
@@ -207,7 +260,8 @@ istream& operator >>(istream& input, ParsedResponse& r) {
 
 void Test(CommentServer& srv, const HttpRequest& request, const ParsedResponse& expected) {
   stringstream ss;
-  srv.ServeRequest(request, ss);
+//  srv.ServeRequest(request, ss);
+  ss << srv.ServeRequest(request);
   ParsedResponse resp;
   ss >> resp;
   ASSERT_EQUAL(resp.code, expected.code);
