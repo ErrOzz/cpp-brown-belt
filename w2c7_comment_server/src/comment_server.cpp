@@ -39,7 +39,7 @@ pair<size_t, string> ParseIdAndContent(const string& body) {
 }
 
 //------------------------------------------------------------------------------
-//  Refactored code block start
+//  HttpRespose class implementation start
 
 enum class HttpCode {
   Ok = 200,
@@ -58,7 +58,7 @@ public:
   HttpResponse& SetContent(string a_content) {
     if (size_t cnt_length = a_content.size(); cnt_length) {
       content = move(a_content);
-      AddHeader("Content-length", to_string(cnt_length));
+      AddHeader("Content-Length", to_string(cnt_length));
     }
     return *this;
   }
@@ -77,12 +77,13 @@ public:
         case HttpCode::Found:
           return "302 Found";
       }
-      return "404 Not found";
+      return "501 Not implemented";
     };
     output << version << " " << code_comment(resp.code) << '\n';
     for (const auto& [header, value] : resp.headers) {
       output << header << ": " << value << '\n';
     }
+    output << '\n' << resp.content;
     return output;
   }
 
@@ -93,7 +94,7 @@ private:
   string content;
 };
 
-//  Refactored code block finish
+//  HttpRespose class implementation finish
 //------------------------------------------------------------------------------
 
 struct LastCommentInfo {
@@ -108,7 +109,7 @@ private:
 
 public:
 //------------------------------------------------------------------------------
-//  Refactored code block start
+//  New ServeRequest method implementation with other signature and return type
 
   HttpResponse ServeRequest(const HttpRequest& req) {
     HttpResponse result(HttpCode::NotFound);
@@ -138,6 +139,8 @@ public:
             last_comment.reset();
           }
           result.SetCode(HttpCode::Ok);
+        } else {
+          result.SetCode(HttpCode::Found).AddHeader("Location", "/captcha");
         }
       }
     } else if (req.method == "GET") {
@@ -157,7 +160,7 @@ public:
     return result;
   }
 
-//  Refactored code block finish
+//  End of new ServeRequest method implementation
 //------------------------------------------------------------------------------
 
   void ServeRequest(const HttpRequest& req, ostream& os) {
@@ -261,8 +264,8 @@ istream& operator >>(istream& input, ParsedResponse& r) {
 
 void Test(CommentServer& srv, const HttpRequest& request, const ParsedResponse& expected) {
   stringstream ss;
-//  srv.ServeRequest(request, ss);
-  ss << srv.ServeRequest(request);
+//  srv.ServeRequest(request, ss);  // Using old ServeRequest implementation
+  ss << srv.ServeRequest(request); // Using new ServeRequest implementation
   ParsedResponse resp;
   ss >> resp;
   ASSERT_EQUAL(resp.code, expected.code);
