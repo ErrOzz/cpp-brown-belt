@@ -111,10 +111,11 @@ public:
 //  Refactored code block start
 
   HttpResponse ServeRequest(const HttpRequest& req) {
+    HttpResponse result(HttpCode::NotFound);
     if (req.method == "POST") {
       if (req.path == "/add_user") {
         comments_.emplace_back();
-        return HttpResponse(HttpCode::Ok).SetContent(to_string(comments_.size() - 1));
+        result.SetCode(HttpCode::Ok).SetContent(to_string(comments_.size() - 1));
       } else if (req.path == "/add_comment") {
         auto [user_id, comment] = ParseIdAndContent(req.body);
 
@@ -126,9 +127,9 @@ public:
 
         if (banned_users.count(user_id) == 0) {
           comments_[user_id].push_back(comment);
-          return HttpResponse(HttpCode::Ok);
+          result.SetCode(HttpCode::Ok);
         } else {
-          return HttpResponse(HttpCode::Found).AddHeader("Location", "/captcha");
+          result.SetCode(HttpCode::Found).AddHeader("Location", "/captcha");
         }
       } else if (req.path == "/checkcaptcha") {
         if (auto [user_id, response] = ParseIdAndContent(req.body); response == "42") {
@@ -136,7 +137,7 @@ public:
           if (last_comment && last_comment->user_id == user_id) {
             last_comment.reset();
           }
-          return HttpResponse(HttpCode::Ok);
+          result.SetCode(HttpCode::Ok);
         }
       }
     } else if (req.method == "GET") {
@@ -146,14 +147,14 @@ public:
         for (const string& comment : comments_[user_id]) {
           user_comments += comment + '\n';
         }
-        return HttpResponse(HttpCode::Ok).SetContent(user_comments);
+        result.SetCode(HttpCode::Ok).SetContent(user_comments);
       } else if (req.path == "/captcha") {
-        return HttpResponse(HttpCode::Ok).SetContent(
+        result.SetCode(HttpCode::Ok).SetContent(
           "What's the answer for The Ultimate Question of Life, the Universe, and Everything?"
         );
       }
     }
-    return HttpResponse(HttpCode::NotFound);
+    return result;
   }
 
 //  Refactored code block finish
