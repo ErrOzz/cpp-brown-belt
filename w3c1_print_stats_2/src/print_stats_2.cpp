@@ -85,8 +85,8 @@ int main() {
       );
 
       int total_income = accumulate(
-        head.begin(), head.end(), 0, [](int cur, Person& p) {
-          return p.income += cur;
+        head.begin(), head.end(), 0, [](int cur, const Person& p) {
+          return p.income + cur;
         }
       );
       cout << "Top-" << count << " people have total income " << total_income << '\n';
@@ -96,8 +96,8 @@ int main() {
 
       IteratorRange range{
         begin(people),
-        partition(begin(people), end(people), [gender](Person& p) {
-          return p.is_male = (gender == 'M');
+        partition(begin(people), end(people), [gender](const Person& p) {
+          return p.is_male == (gender == 'M');
         })
       };
       if (range.begin() == range.end()) {
