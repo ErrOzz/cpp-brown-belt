@@ -10,30 +10,57 @@
 #include <random>
 using namespace std;
 
-template <typename K, typename V, typename Hash = std::hash<K>>
+template <typename K, typename V = string, typename Hash = std::hash<K>>
 class ConcurrentMap {
 public:
   using MapType = unordered_map<K, V, Hash>;
 
   struct WriteAccess {
+    lock_guard<mutex> lock;
     V& ref_to_value;
   };
 
   struct ReadAccess {
     const V& ref_to_value;
+    lock_guard<mutex> lock;
   };
 
-  explicit ConcurrentMap(size_t bucket_count);
+  explicit ConcurrentMap(size_t bucket_count) : bucket(bucket_count),
+                                                mtx(bucket_count) {}
 
-  WriteAccess operator[](const K& key);
-  ReadAccess At(const K& key) const;
+  WriteAccess operator[](const K& key) {
+    size_t bucket_n(BucketN(key));
+    return { lock_guard<mutex>(mtx[bucket_n]),
+             bucket.at(bucket_n)[key] };
+  }
+  ReadAccess At(const K& key) const {
+    size_t bucket_n(BucketN(key));
+    return { bucket.at(bucket_n).at(key),
+             lock_guard<mutex>(mtx[bucket_n]) };
 
-  bool Has(const K& key) const;
+  }
 
-  MapType BuildOrdinaryMap() const;
+  bool Has(const K& key) const {
+    return bucket.at(BucketN(key)).count(key);
+  }
+
+  MapType BuildOrdinaryMap() const {
+    MapType result;
+    for (size_t bn = 0; bn < bucket.size(); ++bn) {
+      lock_guard<mutex> lock(mtx[bn]);
+      result.insert(bucket.at(bn).begin(), bucket.at(bn).end());
+    }
+    return result;
+  }
 
 private:
   Hash hasher;
+  vector<MapType> bucket;
+  mutable vector<mutex> mtx;
+
+  size_t BucketN(const K& key) const {
+    return hasher(key) % bucket.size();
+  }
 };
 
 void RunConcurrentUpdates(
@@ -67,7 +94,7 @@ void TestConcurrentUpdate() {
   const auto result = std::as_const(cm).BuildOrdinaryMap();
   ASSERT_EQUAL(result.size(), key_count);
   for (auto& [k, v] : result) {
-    AssertEqual(v, 6, "Key = " + to_string(k));
+    AssertEqual(v, (int)thread_count * 2, "Key = " + to_string(k));
   }
 }
 
@@ -135,7 +162,6 @@ void TestConstAccess() {
     }
     return result;
   }();
-
   vector<future<string>> futures;
   for (int i = 0; i < 10; ++i) {
     futures.push_back(async([&cm, i] {
@@ -198,12 +224,12 @@ void TestUserType() {
   futures.clear();
 
   for (int i = 0; i < 1000; ++i) {
-    ASSERT_EQUAL(point_weight.At(Point{i, i}).ref_to_value, i);
+    ASSERT_EQUAL(point_weight.At(Point{i, i}).ref_to_value, (size_t)i);
   }
 
   const auto weights = point_weight.BuildOrdinaryMap();
   for (int i = 0; i < 1000; ++i) {
-    ASSERT_EQUAL(weights.at(Point{i, i}), i);
+    ASSERT_EQUAL(weights.at(Point{i, i}), (size_t)i);
   }
 }
 
