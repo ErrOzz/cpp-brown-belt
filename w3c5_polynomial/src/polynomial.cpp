@@ -40,6 +40,34 @@ private:
     }
   }
 
+  class Transit {
+  private:
+    vector<T>& coeffs;
+    size_t degree = 0;
+  public:
+
+    Transit(vector<T>& coeffs) : coeffs(coeffs) {}
+
+    void SetDegree(size_t value) { degree = value; }
+
+    Transit& operator =(T value) {
+      if (degree >= coeffs.size() && value) {
+        coeffs.resize(degree + 1);
+      }
+      if (degree < coeffs.size()) {
+        coeffs[degree] = value;
+      }
+      return *this;
+    }
+
+    operator T() const {
+      if (degree < coeffs.size()) return coeffs[degree];
+      return 0;
+    }
+  };
+
+  Transit transit {coeffs_};
+
 public:
   Polynomial() = default;
   Polynomial(vector<T> coeffs) : coeffs_(std::move(coeffs)) {
@@ -90,6 +118,11 @@ public:
   }
 
   // Реализуйте неконстантную версию operator[]
+  Transit& operator [](size_t degree) {
+//    transit.degree = degree;
+    transit.SetDegree(degree);
+    return transit;
+  }
 
   T operator ()(const T& x) const {
     T res = 0;
@@ -152,7 +185,7 @@ void TestCreation() {
   {
     const vector<int> coeffs = {4, 9, 7, 8, 12};
     Polynomial<int> from_iterators(begin(coeffs), end(coeffs));
-    ASSERT_EQUAL(from_iterators.Degree(), coeffs.size() - 1);
+    ASSERT_EQUAL(static_cast<size_t>(from_iterators.Degree()), coeffs.size() - 1);
     ASSERT(std::equal(cbegin(from_iterators), cend(from_iterators), begin(coeffs)));
   }
 }
