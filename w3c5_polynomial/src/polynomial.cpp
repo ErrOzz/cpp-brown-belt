@@ -35,7 +35,7 @@ private:
   vector<T>& coeffs;
   size_t degree = 0;
 public:
-  Transit(vector<T>& coeffs) : coeffs(coeffs) {}
+  explicit Transit(vector<T>& coeffs) : coeffs(coeffs) {}
 
   void SetDegree(size_t value) { degree = value; }
 
