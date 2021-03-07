@@ -29,44 +29,43 @@ void PrintCoeff(std::ostream& out, int i, const T& coef, bool printed) {
   }
 }
 
+template <typename T>
+class Transit {
+private:
+  vector<T>& coeffs;
+  size_t degree = 0;
+public:
+  Transit(vector<T>& coeffs) : coeffs(coeffs) {}
+
+  void SetDegree(size_t value) { degree = value; }
+
+  Transit& operator =(T value) {
+    if (degree >= coeffs.size() && value) {
+      coeffs.resize(degree + 1);
+    }
+    if (degree < coeffs.size()) {
+      coeffs[degree] = value;
+    }
+    return *this;
+  }
+
+  operator T() const {
+    if (degree < coeffs.size()) return coeffs[degree];
+    return 0;
+  }
+};
+
 template<typename T>
 class Polynomial {
 private:
   std::vector<T> coeffs_ = {0};
+  Transit<T> transit {coeffs_};
 
   void Shrink() {
     while (coeffs_.size() > 1 && coeffs_.back() == 0) {
       coeffs_.pop_back();
     }
   }
-
-  class Transit {
-  private:
-    vector<T>& coeffs;
-    size_t degree = 0;
-  public:
-
-    Transit(vector<T>& coeffs) : coeffs(coeffs) {}
-
-    void SetDegree(size_t value) { degree = value; }
-
-    Transit& operator =(T value) {
-      if (degree >= coeffs.size() && value) {
-        coeffs.resize(degree + 1);
-      }
-      if (degree < coeffs.size()) {
-        coeffs[degree] = value;
-      }
-      return *this;
-    }
-
-    operator T() const {
-      if (degree < coeffs.size()) return coeffs[degree];
-      return 0;
-    }
-  };
-
-  Transit transit {coeffs_};
 
 public:
   Polynomial() = default;
@@ -118,8 +117,7 @@ public:
   }
 
   // Реализуйте неконстантную версию operator[]
-  Transit& operator [](size_t degree) {
-//    transit.degree = degree;
+  Transit<T>& operator [](size_t degree) {
     transit.SetDegree(degree);
     return transit;
   }
