@@ -278,15 +278,13 @@ void TestNonconstAccess() {
   poly[608] = 0;
   ASSERT_EQUAL(poly.Degree(), 5);
 
-  {
-    LOG_DURATION("Iteration over const");
+  { LOG_DURATION("Iteration over const");
     for (size_t i = 10; i < 50000; ++i) {
       ASSERT_EQUAL(std::as_const(poly)[i], 0);
       ASSERT_EQUAL(poly.Degree(), 5);
     }
   }
-  {
-    LOG_DURATION("Iteration over non-const");
+  { LOG_DURATION("Iteration over non-const");
     for (size_t i = 10; i < 50000; ++i) {
       ASSERT_EQUAL(poly[i], 0);
       ASSERT_EQUAL(poly.Degree(), 5);
