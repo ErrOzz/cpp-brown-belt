@@ -20,14 +20,11 @@ Zoo CreateZoo(istream& in) {
   string word;
   while (in >> word) {
     if (word == "Tiger") {
-      Tiger t;
-      zoo.push_back(make_unique<Tiger>(t));
+      zoo.push_back(make_unique<Tiger>());
     } else if (word == "Wolf") {
-      Wolf w;
-      zoo.push_back(make_unique<Wolf>(w));
+      zoo.push_back(make_unique<Wolf>());
     } else if (word == "Fox") {
-      Fox f;
-      zoo.push_back(make_unique<Fox>(f));
+      zoo.push_back(make_unique<Fox>());
     } else {
       throw runtime_error("Unknown animal!");
     }
