@@ -43,14 +43,15 @@ private:
 
 class Reader : public Worker {
 public:
-  explicit Reader(istream& input) {
-    input_r = input;
-  }
+  explicit Reader(istream& input) : input_r(input) {}
+  void Process(unique_ptr<Email> email) {}
   void Run() {
-    while (input) {
-      ...
+    while (input_r) {
       auto email = make_unique<Email>();
-      PassOn(email);
+      getline(input_r, email->from);
+      getline(input_r, email->to);
+      getline(input_r, email->body);
+      PassOn(move(email));
     }
   }
 private:
@@ -61,15 +62,23 @@ private:
 class Filter : public Worker {
 public:
   using Function = function<bool(const Email&)>;
-
-public:
-  // реализуйте класс
+  explicit Filter(Function function) : function_f(move(function)) {}
+  void Process(unique_ptr<Email> email) {
+    if (function_f && function_f(email)) PassOn(move(email));
+  }
+private:
+  Function function_f;
 };
 
 
 class Copier : public Worker {
 public:
-  // реализуйте класс
+  explicit Copier(string recipient) : recipient_c(move(recipient)) {}
+  void Process(unique_ptr<Email> email) {
+    
+  }
+private:
+  string recipient_c;
 };
 
 
