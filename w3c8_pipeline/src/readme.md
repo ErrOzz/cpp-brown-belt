@@ -37,6 +37,12 @@ public:
 
 protected:
   // реализации должны вызывать PassOn, чтобы передать объект дальше
+  // по цепочке обработчиков
+  void PassOn(unique_ptr<Email> email) const;
+
+public:
+  void SetNext(unique_ptr<Worker> worker);
+};
 ```
 Также реализуйте обработчики `Reader`, `Filter`, `Copier` и `Sender`, наследующие от класса `Worker`, а также класс `PipelineBuilder`, конструирующий цепочку обработчиков:  
 ```cpp
@@ -50,6 +56,13 @@ public:
 
   // добавляет новый обработчик Copier
   PipelineBuilder& CopyTo(string recipient);
+
+  // добавляет новый обработчик Sender
+  PipelineBuilder& Send(ostream& out);
+
+  // строит цепочку с помощью метода Worker::SetNext и возвращает первый обработчик в построенной цепочке
+  unique_ptr<Worker> Build();
+};
 ```
 #### Требования:
 

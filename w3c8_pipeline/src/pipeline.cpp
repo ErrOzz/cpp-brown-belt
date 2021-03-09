@@ -28,16 +28,33 @@ public:
 protected:
   // реализации должны вызывать PassOn, чтобы передать объект дальше
   // по цепочке обработчиков
-  void PassOn(unique_ptr<Email> email) const;
+  void PassOn(unique_ptr<Email> email) const {
+    if (next_w) next_w.Process(move(email));
+  }
 
 public:
-  void SetNext(unique_ptr<Worker> next);
+  void SetNext(unique_ptr<Worker> next) {
+    if (next) next_w = move(next);
+  }
+private:
+  unique_ptr<worker> next_w = nullptr;
 };
 
 
 class Reader : public Worker {
 public:
-  // реализуйте класс
+  explicit Reader(istream& input) {
+    input_r = input;
+  }
+  void Run() {
+    while (input) {
+      ...
+      auto email = make_unique<Email>();
+      PassOn(email);
+    }
+  }
+private:
+  istream& input_r;
 };
 
 
