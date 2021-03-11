@@ -93,8 +93,8 @@ public:
   explicit Sender(ostream& output) : output_s(output) {}
   void Process(unique_ptr<Email> email) override {
     output_s << email->from << '\n'
-           << email->to << '\n'
-           << email->body << '\n';
+             << email->to << '\n'
+             << email->body << '\n';
   }
 private:
   ostream& output_s;
