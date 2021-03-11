@@ -44,8 +44,8 @@ private:
 class Reader : public Worker {
 public:
   explicit Reader(istream& input) : input_r(input) {}
-  void Process(unique_ptr<Email> email) {}
-  void Run() {
+  void Process(unique_ptr<Email> email) override {}
+  void Run() override {
     while (input_r) {
       auto email = make_unique<Email>();
       getline(input_r, email->from);
@@ -63,7 +63,7 @@ class Filter : public Worker {
 public:
   using Function = function<bool(const Email&)>;
   explicit Filter(Function function) : function_f(move(function)) {}
-  void Process(unique_ptr<Email> email) {
+  void Process(unique_ptr<Email> email) override {
     if (function_f && function_f(email)) PassOn(move(email));
   }
 private:
@@ -74,8 +74,12 @@ private:
 class Copier : public Worker {
 public:
   explicit Copier(string recipient) : recipient_c(move(recipient)) {}
-  void Process(unique_ptr<Email> email) {
-    
+  void Process(unique_ptr<Email> email) override {
+    if (email.to != recipient_c) {
+      auto copy = make_unique<Email>({email.from, recipient_c, email.body});
+      PassOn(move(copy));
+    }
+    PassOn(move(email));
   }
 private:
   string recipient_c;
@@ -84,7 +88,14 @@ private:
 
 class Sender : public Worker {
 public:
-  // реализуйте класс
+  explicit Sender(ostream& output) : output_s(output) {}
+  void Process(unique_ptr<Email> email) override {
+    output << email.from << '\n'
+           << email.to << '\n'
+           << email.body << '\n';
+  }
+private:
+  ostream& output_s;
 };
 
 
@@ -92,10 +103,15 @@ public:
 class PipelineBuilder {
 public:
   // добавляет в качестве первого обработчика Reader
-  explicit PipelineBuilder(istream& in);
+  explicit PipelineBuilder(istream& in) {
+    pipeline = make_unique<Reader>(in);
+  }
 
   // добавляет новый обработчик Filter
-  PipelineBuilder& FilterBy(Filter::Function filter);
+  PipelineBuilder& FilterBy(Filter::Function filter) {
+    pipeline
+    return *this;
+  }
 
   // добавляет новый обработчик Copier
   PipelineBuilder& CopyTo(string recipient);
@@ -105,6 +121,8 @@ public:
 
   // возвращает готовую цепочку обработчиков
   unique_ptr<Worker> Build();
+private:
+  unique_ptr<Worker> pipline;
 };
 
 
