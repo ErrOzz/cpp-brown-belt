@@ -5,11 +5,13 @@
 
 using namespace std;
 
-class ValueNode : public Expression {
+namespace Expr {
+
+class Value : public Expression {
 private:
   const int value;
 public:
-  explicit ValueNode(int value) : value(value) {}
+  explicit Value(int value) : value(value) {}
   virtual int Evaluate() const override {
     return value;
   }
@@ -21,11 +23,11 @@ public:
   }
 };
 
-class SumNode : public Expression {
+class Sum : public Expression {
 private:
   ExpressionPtr lhs, rhs;
 public:
-  SumNode(ExpressionPtr lhs, ExpressionPtr rhs) : lhs(move(lhs)), rhs(move(rhs)) {}
+  Sum(ExpressionPtr lhs, ExpressionPtr rhs) : lhs(move(lhs)), rhs(move(rhs)) {}
   virtual int Evaluate() const override {
     return lhs->Evaluate() + rhs->Evaluate();
   }
@@ -36,11 +38,11 @@ public:
   }
 };
 
-class ProductNode : public Expression {
+class Product : public Expression {
 private:
   ExpressionPtr lhs, rhs;
 public:
-  ProductNode(ExpressionPtr lhs, ExpressionPtr rhs) : lhs(move(lhs)), rhs(move(rhs)) {}
+  Product(ExpressionPtr lhs, ExpressionPtr rhs) : lhs(move(lhs)), rhs(move(rhs)) {}
   virtual int Evaluate() const override {
     return lhs->Evaluate() * rhs->Evaluate();
   }
@@ -51,16 +53,18 @@ public:
   }
 };
 
+}
+
 ExpressionPtr Value(int value) {
-  return make_unique<ValueNode>(value);
+  return make_unique<Expr::Value>(value);
 }
 
 ExpressionPtr Sum(ExpressionPtr left, ExpressionPtr right) {
-  return make_unique<SumNode>(move(left), move(right));
+  return make_unique<Expr::Sum>(move(left), move(right));
 }
 
 ExpressionPtr Product(ExpressionPtr left, ExpressionPtr right) {
-  return make_unique<ProductNode>(move(left), move(right));
+  return make_unique<Expr::Product>(move(left), move(right));
 }
 
 string Print(const Expression* e) {
