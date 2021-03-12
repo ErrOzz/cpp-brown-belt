@@ -5,6 +5,64 @@
 
 using namespace std;
 
+class ValueNode : public Expression {
+private:
+  const int value;
+public:
+  explicit ValueNode(int value) : value(value) {}
+  virtual int Evaluate() const override {
+    return value;
+  }
+
+  virtual string ToString() const override {
+    stringstream output;
+    output << '(' << value << ')';
+    return output.str();
+  }
+};
+
+class SumNode : public Expression {
+private:
+  ExpressionPtr lhs, rhs;
+public:
+  SumNode(ExpressionPtr lhs, ExpressionPtr rhs) : lhs(move(lhs)), rhs(move(rhs)) {}
+  virtual int Evaluate() const override {
+    return lhs->Evaluate() + rhs->Evaluate();
+  }
+  virtual string ToString() const override {
+    stringstream output;
+    output << lhs->ToString() << '+' << rhs->ToString();
+    return output.str();
+  }
+};
+
+class ProductNode : public Expression {
+private:
+  ExpressionPtr lhs, rhs;
+public:
+  ProductNode(ExpressionPtr lhs, ExpressionPtr rhs) : lhs(move(lhs)), rhs(move(rhs)) {}
+  virtual int Evaluate() const override {
+    return lhs->Evaluate() * rhs->Evaluate();
+  }
+  virtual string ToString() const override {
+    stringstream output;
+    output << lhs->ToString() << '*' << rhs->ToString();
+    return output.str();
+  }
+};
+
+ExpressionPtr Value(int value) {
+  return make_unique<ValueNode>(value);
+}
+
+ExpressionPtr Sum(ExpressionPtr left, ExpressionPtr right) {
+  return make_unique<SumNode>(move(left), move(right));
+}
+
+ExpressionPtr Product(ExpressionPtr left, ExpressionPtr right) {
+  return make_unique<ProductNode>(move(left), move(right));
+}
+
 string Print(const Expression* e) {
   if (!e) {
     return "Null expression provided";
@@ -24,8 +82,19 @@ void Test() {
   ASSERT_EQUAL(Print(e1.get()), "Null expression provided");
 }
 
+void TestSimple() {
+  ExpressionPtr v1 = Value(18);
+  ASSERT_EQUAL(Print(v1.get()), "(18) = 18");
+  ExpressionPtr v2 = Value(22);
+  ASSERT_EQUAL(Print(v2.get()), "(22) = 22");
+  ExpressionPtr s1 = Sum(move(v1), move(v2));
+  ASSERT_EQUAL(Print(s1.get()), "(18)+(22) = 40");
+
+}
+
 int main() {
   TestRunner tr;
+  RUN_TEST(tr, TestSimple);
   RUN_TEST(tr, Test);
   return 0;
 }
