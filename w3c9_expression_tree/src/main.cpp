@@ -17,48 +17,48 @@ public:
   }
 
   virtual string ToString() const override {
-    stringstream output;
-    output << value;
-    return output.str();
+    return to_string(value);
   }
 };
 
 class BinOperator : public Expression {
-protected:
+private:
   ExpressionPtr lhs, rhs;
+
+  virtual int EvaluateValues(int lhs, int rhs) const = 0;
+  virtual char GetSymbol() const = 0;
 public:
   BinOperator(ExpressionPtr lhs, ExpressionPtr rhs)
               : lhs(move(lhs)), rhs(move(rhs)) {}
-  virtual int Evaluate() const = 0;
+  virtual int Evaluate() const final {
+    return EvaluateValues(lhs->Evaluate(), rhs->Evaluate());
+  }
 
-  virtual string ToString() const = 0;
+  virtual string ToString() const final {
+    return '(' + lhs->ToString() + ')' + GetSymbol()
+         + '(' + rhs->ToString() + ')';
+  }
 };
 
 class Sum : public BinOperator {
 public:
-  Sum(ExpressionPtr lhs, ExpressionPtr rhs) : BinOperator(move(lhs), move(rhs)) {}
-  virtual int Evaluate() const override {
-    return lhs->Evaluate() + rhs->Evaluate();
+  using BinOperator::BinOperator; //constructor overriding
+  virtual int EvaluateValues(int lhs, int rhs) const override {
+    return lhs + rhs;
   }
-  virtual string ToString() const override {
-    stringstream output;
-    output << '(' << lhs->ToString() << ')' << '+'
-           << '(' << rhs->ToString() << ')';
-    return output.str();
+  virtual char GetSymbol() const override {
+    return '+';
   }
 };
 
 class Product : public BinOperator {
 public:
-  Product(ExpressionPtr lhs, ExpressionPtr rhs) : BinOperator(move(lhs), move(rhs)) {}
-  virtual int Evaluate() const override {
-    return lhs->Evaluate() * rhs->Evaluate();
+  using BinOperator::BinOperator;
+  virtual int EvaluateValues(int lhs, int rhs) const override {
+    return lhs * rhs;
   }
-  virtual string ToString() const override {
-    stringstream output;
-    output << '(' << lhs->ToString() << ')' << '*'
-           << '(' << rhs->ToString() << ')';
-    return output.str();
+  virtual char GetSymbol() const override {
+    return '*';
   }
 };
 
