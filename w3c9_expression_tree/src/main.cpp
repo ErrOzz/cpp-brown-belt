@@ -18,37 +18,46 @@ public:
 
   virtual string ToString() const override {
     stringstream output;
-    output << '(' << value << ')';
+    output << value;
     return output.str();
   }
 };
 
-class Sum : public Expression {
-private:
+class BinOperator : public Expression {
+protected:
   ExpressionPtr lhs, rhs;
 public:
-  Sum(ExpressionPtr lhs, ExpressionPtr rhs) : lhs(move(lhs)), rhs(move(rhs)) {}
+  BinOperator(ExpressionPtr lhs, ExpressionPtr rhs)
+              : lhs(move(lhs)), rhs(move(rhs)) {}
+  virtual int Evaluate() const = 0;
+
+  virtual string ToString() const = 0;
+};
+
+class Sum : public BinOperator {
+public:
+  Sum(ExpressionPtr lhs, ExpressionPtr rhs) : BinOperator(move(lhs), move(rhs)) {}
   virtual int Evaluate() const override {
     return lhs->Evaluate() + rhs->Evaluate();
   }
   virtual string ToString() const override {
     stringstream output;
-    output << lhs->ToString() << '+' << rhs->ToString();
+    output << '(' << lhs->ToString() << ')' << '+'
+           << '(' << rhs->ToString() << ')';
     return output.str();
   }
 };
 
-class Product : public Expression {
-private:
-  ExpressionPtr lhs, rhs;
+class Product : public BinOperator {
 public:
-  Product(ExpressionPtr lhs, ExpressionPtr rhs) : lhs(move(lhs)), rhs(move(rhs)) {}
+  Product(ExpressionPtr lhs, ExpressionPtr rhs) : BinOperator(move(lhs), move(rhs)) {}
   virtual int Evaluate() const override {
     return lhs->Evaluate() * rhs->Evaluate();
   }
   virtual string ToString() const override {
     stringstream output;
-    output << lhs->ToString() << '*' << rhs->ToString();
+    output << '(' << lhs->ToString() << ')' << '*'
+           << '(' << rhs->ToString() << ')';
     return output.str();
   }
 };
@@ -88,12 +97,11 @@ void Test() {
 
 void TestSimple() {
   ExpressionPtr v1 = Value(18);
-  ASSERT_EQUAL(Print(v1.get()), "(18) = 18");
+  ASSERT_EQUAL(Print(v1.get()), "18 = 18");
   ExpressionPtr v2 = Value(22);
-  ASSERT_EQUAL(Print(v2.get()), "(22) = 22");
+  ASSERT_EQUAL(Print(v2.get()), "22 = 22");
   ExpressionPtr s1 = Sum(move(v1), move(v2));
   ASSERT_EQUAL(Print(s1.get()), "(18)+(22) = 40");
-
 }
 
 int main() {
