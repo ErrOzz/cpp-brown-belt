@@ -85,16 +85,34 @@ void TestSimple() {
   canvas.SetSize({5, 3});
 
   canvas.AddShape(ShapeType::Rectangle, {1, 0}, {3, 3}, nullptr);
+  {
+    stringstream output;
+    canvas.Print(output);
+
+    const auto answer =
+        "#######\n"
+        "# ... #\n"
+        "# ... #\n"
+        "# ... #\n"
+        "#######\n";
+
+    ASSERT_EQUAL(answer, output.str());
+  }
+  canvas.SetSize({10, 5});
+
+  canvas.AddShape(ShapeType::Rectangle, {5, 2}, {10, 10}, nullptr);
 
   stringstream output;
   canvas.Print(output);
 
   const auto answer =
-      "#######\n"
-      "# ... #\n"
-      "# ... #\n"
-      "# ... #\n"
-      "#######\n";
+      "############\n"
+      "# ...      #\n"
+      "# ...      #\n"
+      "# ... .....#\n"
+      "#     .....#\n"
+      "#     .....#\n"
+      "############\n";
 
   ASSERT_EQUAL(answer, output.str());
 }
@@ -161,6 +179,7 @@ void TestCpp() {
   auto v1 = canvas.DuplicateShape(h1, {62, 3});
   canvas.ResizeShape(v1, {6, 11});
   auto v2 = canvas.DuplicateShape(v1, {38, 3});
+
 
   stringstream output;
   canvas.Print(output);
