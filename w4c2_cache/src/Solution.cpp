@@ -1,9 +1,6 @@
 #include "Common.h"
 #include <unordered_map>
 #include <mutex>
-#include <algorithm>
-
-#include<iostream>
 
 using namespace std;
 
@@ -53,7 +50,6 @@ public:
     return data_[book_name].ptr;
   }
 };
-
 
 unique_ptr<ICache> MakeCache(
     shared_ptr<IBooksUnpacker> books_unpacker,
