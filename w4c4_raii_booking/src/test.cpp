@@ -32,7 +32,7 @@ void TestNoOverbooking() {
 }
 
 void TestFlightOverbooking() {
-  FlightProvider::capacity = 1;
+  FlightProvider::capacity = 0;
   HotelProvider::capacity = 100;
   FlightProvider::counter = 0;
   HotelProvider::counter = 0;
