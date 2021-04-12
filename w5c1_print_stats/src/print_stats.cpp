@@ -1,5 +1,9 @@
 #include <iostream>
+#include <algorithm>
+#include <vector>
 
+using namespace std;
+/*
 enum class Gender {
   FEMALE,
   MALE
@@ -27,8 +31,29 @@ int ComputeMedianAge(InputIt range_begin, InputIt range_end) {
   );
   return middle->age;
 }
-
-void PrintStats(vector<Person> persons);
+*/
+void PrintStats(vector<Person> persons) {
+  const auto fem_end = partition(begin(persons), end(persons),
+    [](const Person& p) { return p.gender == Gender::FEMALE; });
+  const auto emp_fem_end = partition(begin(persons), fem_end,
+    [](const Person& p){ return p.is_employed; });
+  const auto emp_m_end = partition(fem_end, end(persons),
+    [](const Person& p){ return p.is_employed; });
+  cout << "Median age = "
+       << ComputeMedianAge(begin(persons), end(persons)) << endl;
+  cout << "Median age for females = "
+       << ComputeMedianAge(begin(persons), fem_end) << endl;
+  cout << "Median age for males = "
+       << ComputeMedianAge(fem_end, end(persons)) << endl;
+  cout << "Median age for employed females = "
+       << ComputeMedianAge(begin(persons), emp_fem_end) << endl;
+  cout << "Median age for unemployed females = "
+       << ComputeMedianAge(emp_fem_end, fem_end) << endl;
+  cout << "Median age for employed males = "
+       << ComputeMedianAge(fem_end, emp_m_end) << endl;
+  cout << "Median age for unemployed males = "
+       << ComputeMedianAge(emp_m_end, end(persons)) << endl;
+}
 
 int main() {
   vector<Person> persons = {
