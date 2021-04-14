@@ -29,6 +29,9 @@ CHEER 2
 CHEER 3
 READ 3 10
 CHEER 3
+READ 3 11
+CHEER 3
+CHEER 1
 ```
 
 **Вывод**
