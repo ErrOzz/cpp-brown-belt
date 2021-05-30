@@ -39,23 +39,25 @@ public:
   tuple<TasksInfo, TasksInfo> PerformPersonTasks(
       const string& person, int task_count) {
     TasksInfo& tasks = person_tasks.at(person);
-    TasksInfo performed;
+    TasksInfo performed, rest;
     for (auto& [status, count] : tasks) {
-      if (task_count < 1 || status == TaskStatus::DONE) break;
-      auto shift_count = min(count, task_count);
-      performed[++static_cast<int>(status)] = shift_count;
-      // // Здесь может получиться нулевое количество задач
-      // if (count -= shift_count; count) {
-      //   rest[status] = count;
-      // }
+      auto shift_count = status == TaskStatus::DONE ? 0 : min(count, task_count);
+      if (shift_count) performed[++static_cast<int>(status)] = shift_count;
+      if (auto untouched = count - shift_count; untouched) {
+        rest[status] = untouched;
+      }
       task_count -= shift_count;
     }
-    TasksInfo rest;
+    TasksInfo result;
     for (int status = 0; status < 4; ++status) {
-      int count = tasks.count(status) ? tasks[status] : 0;
-      count -= performed.count(status + 1) ? performed[status + 1] : 0;
-      if (count) rest[status] = count;
+      if (performed.count(status)) result[status] = performed[status];
+      if (rest.count(status)) result[status] += rest[status];
     }
+    swap(move(tasks), move(result));
+    if (auto it = rest.find(TaskStatus::DONE); it != rest.end()) {
+      rest.erase(it);
+    }
+    return tie(move(performed), move(rest));
   }
 };
 
