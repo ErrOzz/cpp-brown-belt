@@ -1,8 +1,10 @@
+#include <iostream>
 #include <map>
 #include <unordered_map>
 #include <tuple>
+#include <utility>
 
-// #define FOR_SEND
+//#define FOR_SEND
 
 using namespace std;
 
@@ -42,22 +44,26 @@ public:
     TasksInfo performed, rest;
     for (auto& [status, count] : tasks) {
       auto shift_count = status == TaskStatus::DONE ? 0 : min(count, task_count);
-      if (shift_count) performed[++static_cast<int>(status)] = shift_count;
+      if (shift_count) {
+        auto p_status = static_cast<TaskStatus>(static_cast<int>(status) + 1);
+        performed[p_status] = shift_count;
+      }
       if (auto untouched = count - shift_count; untouched) {
         rest[status] = untouched;
       }
       task_count -= shift_count;
     }
     TasksInfo result;
-    for (int status = 0; status < 4; ++status) {
+    for (int i = 0; i < 4; ++i) {
+      TaskStatus status = static_cast<TaskStatus>(i);
       if (performed.count(status)) result[status] = performed[status];
       if (rest.count(status)) result[status] += rest[status];
     }
-    swap(move(tasks), move(result));
+    swap(tasks, result);
     if (auto it = rest.find(TaskStatus::DONE); it != rest.end()) {
       rest.erase(it);
     }
-    return tie(move(performed), move(rest));
+    return tie(performed, rest);
   }
 };
 
