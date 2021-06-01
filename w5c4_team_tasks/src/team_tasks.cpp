@@ -1,10 +1,15 @@
+//#define FOR_SEND
+#ifndef FOR_SEND
+#include "test_runner.h"
+#endif
+
+
 #include <iostream>
 #include <map>
 #include <unordered_map>
 #include <tuple>
 #include <utility>
 
-//#define FOR_SEND
 
 using namespace std;
 
@@ -63,7 +68,7 @@ public:
     if (auto it = rest.find(TaskStatus::DONE); it != rest.end()) {
       rest.erase(it);
     }
-    return tie(performed, rest);
+    return make_tuple(move(performed), move(rest));
   }
 };
 
@@ -77,7 +82,41 @@ void PrintTasksInfo(TasksInfo tasks_info) {
       ", " << tasks_info[TaskStatus::DONE] << " tasks are done" << endl;
 }
 
+#ifndef FOR_SEND
+
+void TestSimple() {
+  TeamTasks tasks;
+  for (int i = 0; i < 10; ++i) {
+    tasks.AddNewTask("Oz");
+  }
+  ASSERT(tasks.GetPersonTasksInfo("Oz").at(TaskStatus::NEW) == 10);
+  TasksInfo updated_tasks, untouched_tasks;
+  tie(updated_tasks, untouched_tasks) = tasks.PerformPersonTasks("Oz", 5);
+  ASSERT(untouched_tasks.at(TaskStatus::NEW) == 5);
+  ASSERT(updated_tasks.at(TaskStatus::IN_PROGRESS) == 5);
+  tie(updated_tasks, untouched_tasks) = tasks.PerformPersonTasks("Oz", 20);
+  ASSERT(updated_tasks.at(TaskStatus::IN_PROGRESS) == 5);
+  ASSERT(updated_tasks.at(TaskStatus::TESTING) == 5);
+  tie(updated_tasks, untouched_tasks) = tasks.PerformPersonTasks("Oz", 7);
+  ASSERT(updated_tasks.at(TaskStatus::TESTING) == 5);
+  ASSERT(updated_tasks.at(TaskStatus::DONE) == 2);
+  ASSERT(untouched_tasks.at(TaskStatus::TESTING) == 3);
+  tie(updated_tasks, untouched_tasks) = tasks.PerformPersonTasks("Oz", 100);
+  ASSERT(updated_tasks.at(TaskStatus::DONE) == 8);
+  ASSERT(tasks.GetPersonTasksInfo("Oz").at(TaskStatus::DONE) == 10);
+}
+
+#endif
+
 int main() {
+
+  #ifndef FOR_SEND
+
+  TestRunner tr;
+  RUN_TEST(tr, TestSimple);
+
+  #endif
+
   TeamTasks tasks;
   tasks.AddNewTask("Ilia");
   for (int i = 0; i < 3; ++i) {
