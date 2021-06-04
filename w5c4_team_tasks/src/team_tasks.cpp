@@ -1,4 +1,4 @@
-//#define FOR_SEND
+// #define FOR_SEND
 #ifndef FOR_SEND
 #include "test_runner.h"
 #endif
@@ -45,9 +45,10 @@ public:
   // подробности см. ниже
   tuple<TasksInfo, TasksInfo> PerformPersonTasks(
       const string& person, int task_count) {
-    TasksInfo& tasks = person_tasks.at(person);
+//    TasksInfo& tasks = person_tasks.at(person);
+    TasksInfo& tasks = person_tasks[person];
     TasksInfo performed, rest;
-    for (auto& [status, count] : tasks) {
+    for (const auto& [status, count] : tasks) {
       auto shift_count = status == TaskStatus::DONE ? 0 : min(count, task_count);
       if (shift_count) {
         auto p_status = static_cast<TaskStatus>(static_cast<int>(status) + 1);
@@ -84,6 +85,15 @@ void PrintTasksInfo(TasksInfo tasks_info) {
 
 #ifndef FOR_SEND
 
+void TestEmpty() {
+  TeamTasks tasks;
+  TasksInfo updated_tasks, untouched_tasks;
+  tie(updated_tasks, untouched_tasks) = tasks.PerformPersonTasks("Oz", 5);
+  ASSERT(updated_tasks.size() == 0);
+  ASSERT(untouched_tasks.size() == 0);
+  ASSERT(tasks.GetPersonTasksInfo("Oz").size() == 0);
+}
+
 void TestSimple() {
   TeamTasks tasks;
   for (int i = 0; i < 10; ++i) {
@@ -113,6 +123,7 @@ int main() {
   #ifndef FOR_SEND
 
   TestRunner tr;
+  RUN_TEST(tr, TestEmpty);
   RUN_TEST(tr, TestSimple);
 
   #endif
