@@ -69,7 +69,7 @@ public:
     if (auto it = rest.find(TaskStatus::DONE); it != rest.end()) {
       rest.erase(it);
     }
-    return make_tuple(move(performed), move(rest));
+    return {move(performed), move(rest)};
   }
 };
 
