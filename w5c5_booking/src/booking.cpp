@@ -20,14 +20,14 @@ class HotelManager {
   int client_count = 0;
   int room_count = 0;
 
-  static int day_duration = 86400;
+  static const int day_duration = 86400;
 
   void RemoveOldBookings() {
     long long int current_time = day_que.back().time;
-    while (auto& front_book = day_que.front();
-           front_book.time + day_duration  <= current_time) {
+    for (auto& front_book = day_que.front();
+           front_book.time + day_duration  <= current_time;) {
       auto client_it = client_appears.find(front_book.client_id);
-      if (--(*client_it).second == 0) {
+      if (--client_it->second == 0) {
         client_appears.erase(client_it);
         --client_count;
       }
@@ -59,34 +59,35 @@ public:
     bookings[move(hotel_name)].Book(time, client_id, rooms);
   }
   int Clients(const string& hotel_name) const {
-    if (auto it = bookings.find(hotel_name); it == bookings.end()) return 0;
-    return *it.second.Clients();
+    auto it = bookings.find(hotel_name);
+    if (it == bookings.end()) return 0;
+    return it->second.Clients();
   }
   int Rooms(const string& hotel_name) const {
-    if (auto it = bookings.find(hotel_name); it == bookings.end()) return 0;
-    return *it.second.Rooms();
+    auto it = bookings.find(hotel_name);
+    if (it == bookings.end()) return 0;
+    return it->second.Rooms();
   }
-}
+};
 
-int int main() {
+int main() {
   int q;
   cin >> q;
   BookManager bm;
   do {
     string command, hotel_name;
     cin >> command;
-    switch (command) {
-      case "BOOK":
-        long long int time;
-        int client_id, rooms;
-        cin >> time >> hotel_name >> client_id >> rooms;
-        bm.Book(time, move(hotel_name), client_id, rooms);
-      case "CLIENTS":
-        cin >> hotel_name;
-        cout << bm.Clients(hotel_name);
-      case "ROOMS":
-        cin >> hotel_name;
-        cout << bm.Rooms(hotel_name);
+    if (command == "BOOK") {
+      long long int time;
+      int client_id, rooms;
+      cin >> time >> hotel_name >> client_id >> rooms;
+      bm.Book(time, move(hotel_name), client_id, rooms);
+    } else if (command == "CLIENTS") {
+      cin >> hotel_name;
+      cout << bm.Clients(hotel_name) << endl;
+    } else if (command == "ROOMS") {
+      cin >> hotel_name;
+      cout << bm.Rooms(hotel_name) << endl;
     }
   } while (--q > 0);
   return 0;
