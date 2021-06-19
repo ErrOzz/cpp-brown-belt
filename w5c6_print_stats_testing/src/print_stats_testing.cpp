@@ -150,11 +150,11 @@ void TestComputeMedianAgeVoidRange() {
 
 void TestComputeMedianAgeOddSizeRange() {
   vector<Person> persons {
-    {1, Gender::FEMALE, false},
-    {2, Gender::FEMALE, false},
-    {3, Gender::FEMALE, false},
-    {4, Gender::FEMALE, false},
-    {5, Gender::FEMALE, false}
+    Person{.age = 1, .gender = Gender::FEMALE, .is_employed = false},
+    Person{.age = 2, .gender = Gender::FEMALE, .is_employed = false},
+    Person{.age = 3, .gender = Gender::FEMALE, .is_employed = false},
+    Person{.age = 4, .gender = Gender::FEMALE, .is_employed = false},
+    Person{.age = 5, .gender = Gender::FEMALE, .is_employed = false}
   };
   ASSERT_EQUAL(ComputeMedianAge(begin(persons), end(persons)), 3);
 }
@@ -164,12 +164,14 @@ void TestReadPersons() {
   istringstream ss(s);
   vector<Person> persons = ReadPersons(ss);
   ASSERT_EQUAL(persons.size(), 2u);
-  ASSERT_EQUAL(persons[0].age, 10);
-  ASSERT(persons[0].gender == Gender::MALE);
-  ASSERT_EQUAL(persons[0].is_employed, false);
-  ASSERT_EQUAL(persons[1].age, 20);
-  ASSERT(persons[1].gender == Gender::FEMALE);
-  ASSERT_EQUAL(persons[1].is_employed, true);
+  ASSERT_EQUAL(
+      persons[0],
+      Person({.age = 10, .gender = Gender::MALE, .is_employed = false})
+  );
+  ASSERT_EQUAL(
+      persons[1],
+      Person({.age = 20, .gender = Gender::FEMALE, .is_employed = true})
+  );
 }
 
 void TestComputeStats() {
@@ -191,10 +193,40 @@ void TestComputeStats() {
 }
 
 void TestPrintStats() {
-  ostringstream os;
-  AgeStats stats {7, 6, 5, 4, 3, 2, 1};
-  PrintStats(stats, os);
-
+  stringstream ss;
+  const AgeStats stats {
+    .total = 7,
+    .females = 6,
+    .males = 5,
+    .employed_females = 4,
+    .unemployed_females = 3,
+    .employed_males = 2,
+    .unemployed_males = 1
+  };
+  PrintStats(stats, ss);
+//  vector<string> answers {
+//    {"Median age = 7"},
+//    {"Median age for females = 6"},
+//    {"Median age for males = 5"},
+//    {"Median age for employed females = 4"},
+//    {"Median age for unemployed females = 3"},
+//    {"Median age for employed males = 2"},
+//    {"Median age for unemployed males = 1"}
+//  };
+//  int i = 0;
+//  for (string line; getline(ss, line); ) {
+//    ASSERT_EQUAL(answers[i++], line);
+//  }
+  ASSERT_EQUAL(
+        ss.str(),
+        "Median age = 7\n" \
+        "Median age for females = 6\n" \
+        "Median age for males = 5\n" \
+        "Median age for employed females = 4\n" \
+        "Median age for unemployed females = 3\n" \
+        "Median age for employed males = 2\n" \
+        "Median age for unemployed males = 1\n"
+   );
 }
 
 int main() {
