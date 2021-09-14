@@ -13,6 +13,33 @@ bool operator<(const Rstring& lhs, const Rstring& rhs) {
   return lexicographical_compare(lhs.rbegin(), lhs.rend(), rhs.rbegin(), rhs.rend());
 }
 
+// reference version
+
+//bool IsSubdomain(const Rstring& subdomain, const Rstring& domain) {
+//  int i = subdomain.size() - 1;
+//  int j = domain.size() - 1;
+//  while(i >=0 && j >= 0) {
+//    if(subdomain[i--] != domain[j--]) {
+//      return false;
+//    }
+//  }
+//  return (i < 0 && j < 0) ||
+//         (i < 0 && domain[j] == '.') ||
+//         (j < 0 && subdomain[i] == '.');
+//}
+
+bool IsSubdomain(const Rstring& subdomain, const Rstring& domain) {
+  if(const size_t subdomain_size = subdomain.size(),
+                  domain_size = domain.size(),
+                  pos = subdomain_size - domain_size;
+     subdomain_size >= domain_size &&
+     subdomain.find(domain, pos) != Rstring::npos &&
+     (pos ? (subdomain.at(pos - 1) == '.') : true)) {
+    return true;
+  }
+  return false;
+}
+
 set<Rstring> ReadDomains(istream& input, int number) {
   set<Rstring> result;
   for (int i = 0; i < number; ++i) {
@@ -26,12 +53,7 @@ set<Rstring> ReadDomains(istream& input, int number) {
 set<Rstring> FilterDomains(set<Rstring>&& domains) {
   vector<set<Rstring>::iterator> domains_to_delete;
   for (auto stored_it = domains.begin(), it = next(stored_it); it != domains.end(); ) {
-    if (size_t domain_size = it->size(),
-               stored_size = stored_it->size(),
-               pos = domain_size - stored_size;
-        domain_size > stored_size &&
-        it->find(*stored_it, pos) != Rstring::npos &&
-        it->at(pos - 1) == '.') {
+    if(IsSubdomain(*it, *stored_it)) {
       domains_to_delete.push_back(it);
     } else {
       stored_it = it;
@@ -48,16 +70,7 @@ bool VerifyDomain(istream& input, const set<Rstring>& denied) {
   Rstring domain;
   getline(input, domain);
   const auto it = denied.upper_bound(domain);
-  if(it == denied.begin()) {
-    return true;
-  }
-  if(const size_t domain_size = domain.size(),
-                  denied_size = prev(it)->size(),
-                  pos = domain.rfind(*prev(it));
-     domain_size >= denied_size &&
-     pos != Rstring::npos &&
-     pos == domain_size - denied_size &&
-     (pos ? (domain[pos - 1] == '.') : true)) {
+  if(it != denied.begin() && IsSubdomain(domain, *prev(it))) {
     return false;
   }
   return true;
