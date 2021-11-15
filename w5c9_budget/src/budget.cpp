@@ -4,6 +4,7 @@
 
 using namespace std;
 
+#define EPOCH_YEAR  1900
 #define START_YEAR  2000
 #define STOP_YEAR   2099
 #define TAX         0.87
@@ -27,7 +28,7 @@ public:
   Date(int year, int month, int day) : year_(year), month_(month), day_(day) {}
 
   time_t AsTimestamp() const {
-    tm t{.tm_mday = day_, .tm_mon = month_ - 1, .tm_year = year_ - 1900};
+    tm t{.tm_mday = day_, .tm_mon = month_ - 1, .tm_year = year_ - EPOCH_YEAR};
     return mktime(&t);
   }
 
