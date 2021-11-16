@@ -42,9 +42,9 @@ istream& operator>>(istream& input, Date& date) {
 };
 
 class DaySpan {
-  size_t begin_ = 0, end_ = 0, qty_ = 0;
+  size_t begin_ = 0, end_ = 0;
 
-  size_t ComputeDay(const Date& date) const {
+  static size_t ComputeDay(const Date& date) const {
     const time_t timestamp_from = Date(START_YEAR, 1, 1).AsTimestamp();
     const time_t timestamp_to = date.AsTimestamp();
     constexpr static const int SECONDS_IN_DAY = 60 * 60 * 24;
@@ -53,12 +53,11 @@ class DaySpan {
 
 public:
   DaySpan(const Date& from, const Date& to) : begin_(ComputeDay(from)),
-                                              end_(ComputeDay(to) + 1),
-                                              qty_(end_ - begin_) {
+                                              end_(ComputeDay(to) + 1) {
   }
   const size_t Begin() const { return begin_; }
   const size_t End() const {return end_; }
-  const size_t Qty() const { return qty_; }
+  const size_t Qty() const { return end_ - begin_; }
 
 };
 
