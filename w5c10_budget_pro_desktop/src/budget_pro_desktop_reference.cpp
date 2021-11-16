@@ -5,6 +5,10 @@
 #include <optional>
 #include <charconv>
 #include <ctime>
+#include <memory>
+#include <vector>
+#include <unordered_map>
+#include <numeric>
 
 using namespace std;
 
@@ -144,6 +148,77 @@ static const size_t DAY_COUNT = ComputeDaysDiff(START_DATE, STOP_DATE);
 size_t ComputeDayIndex(const Date& date) {
   return ComputeDaysDiff(START_DATE, date);
 }
+
+IndexSegment MakeDateSegment(const Date& date_from, const Date& date_to) {
+  return {ComputeDayIndex(date_from), ComputeDayIndex(date_to)};
+}
+
+class BudgetManager : public vector<MoneyState> {
+public:
+  BudgetManager() : vector(DAY_COUNT) {}
+  auto MakeDateRange(const Date& date_from, const Date& date_to) const {
+    const auto segment = MakeDateSegment(date_from, date_to);
+    return Range(begin() + segment.first, begin() + segment.last);
+  }
+  auto MakeDateRange(const Date& date_from, const Date& date_to) {
+    const auto segment = MakeDateSegment(date_from, date_to);
+    return Range(begin() + segment.first, begin() + segment.last);
+  }
+};
+
+
+struct Request;
+using RequestHolder = unique_ptr<Request>;
+
+struct Request {
+  enum class Type {
+    COMPUTE_INCOME,
+    EARN,
+    SPEND,
+    PAY_TAX
+  };
+
+  const Type type;
+
+  Request(Type type) : type(type) {}
+  static RequestHolder Create(Type type);
+  virtual void ParseFrom(string_view input) = 0;
+  virtual ~Request() = default;
+};
+
+const unordered_map<string_view, Request::Type> STR_TO_REQUEST_TYPE = {
+    {"ComputeIncome", Request::Type::COMPUTE_INCOME},
+    {"Earn", Request::Type::EARN},
+    {"Spend", Request::Type::SPEND},
+    {"PayTax", Request::Type::PAY_TAX}
+};
+
+template <typename ResultType>
+struct ReadRequest : Request {
+  using Request::Request;
+  virtual ResultType Process(const BudgetManager& manager) const = 0;
+};
+
+struct ModifyRequest : Request {
+  using Request::Request;
+  virtual void Process(const BudgetManager& manager) const = 0;
+};
+
+struct ComputeIncomeRequest : ReadRequest<double> {
+  Date date_from = START_DATE;
+  Date date_to = START_DATE;
+
+  ComputeIncomeRequest() : ReadRequest(Type::COMPUTE_INCOME) {}
+  void ParseFrom(string_view input) override {
+    date_from = Date::FromString(ReadToken(input));
+    date_to = Date::FromString(input);
+  }
+
+  double Process(const BudgetManager& manager) const override {
+    const auto range = manager.MakeDateRange(date_from, date_to);
+    return accumulate(range.begin(), range.end(), MoneyState{}).ComputeIncome();
+  }
+};
 
 int main () {
   return 0;
