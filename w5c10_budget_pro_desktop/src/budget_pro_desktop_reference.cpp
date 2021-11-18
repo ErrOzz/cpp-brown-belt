@@ -20,7 +20,7 @@ public:
   Range(It begin, It end) : begin_(begin), end_(end) {}
   It begin() const { return begin_; }
   It end() const { return end_; }
-  size_t Size() { return distance(begin_, end_); }
+  size_t size() const { return distance(begin_, end_); }
 };
 
 pair<string_view, optional<string_view>> SplitTwoStrict(string_view s, string_view delimiter = " ") {
@@ -150,7 +150,7 @@ size_t ComputeDayIndex(const Date& date) {
 }
 
 IndexSegment MakeDateSegment(const Date& date_from, const Date& date_to) {
-  return {ComputeDayIndex(date_from), ComputeDayIndex(date_to)};
+  return {ComputeDayIndex(date_from), ComputeDayIndex(date_to) + 1};
 }
 
 class BudgetManager : public vector<MoneyState> {
@@ -201,7 +201,7 @@ struct ReadRequest : Request {
 
 struct ModifyRequest : Request {
   using Request::Request;
-  virtual void Process(const BudgetManager& manager) const = 0;
+  virtual void Process(BudgetManager& manager) const = 0;
 };
 
 struct ComputeIncomeRequest : ReadRequest<double> {
@@ -220,6 +220,132 @@ struct ComputeIncomeRequest : ReadRequest<double> {
   }
 };
 
+template <int SIGN>
+struct AddMoneyRequest : ModifyRequest {
+  static_assert(SIGN == -1 || SIGN == 1);
+
+  Date date_from = START_DATE;
+  Date date_to = START_DATE;
+  size_t value = 0;
+
+  AddMoneyRequest() : ModifyRequest(SIGN == 1 ? Type::EARN : Type::SPEND) {}
+  void ParseFrom(string_view input) override {
+    date_from = Date::FromString(ReadToken(input));
+    date_to = Date::FromString(ReadToken(input));
+    value = ConvertToInt(input);
+  }
+
+  void Process(BudgetManager& manager) const override {
+    const auto range = manager.MakeDateRange(date_from, date_to);
+    const double daily_value = value * 1.0 / size(range);
+    const MoneyState daily_change = SIGN == 1 ?
+                                    MoneyState{.earned = daily_value} :
+                                    MoneyState{.spent = daily_value};
+    for (auto& money : range) {
+      money += daily_change;
+    }
+  }
+};
+
+struct PayTax : ModifyRequest {
+  Date date_from = START_DATE;
+  Date date_to = START_DATE;
+  uint8_t percentage = 0;
+
+  PayTax() : ModifyRequest(Type::PAY_TAX) {}
+  void ParseFrom(string_view input) override {
+    date_from = Date::FromString(ReadToken(input));
+    date_to = Date::FromString(ReadToken(input));
+    percentage = ConvertToInt(input);
+  }
+
+  void Process(BudgetManager& manager) const override {
+    for (auto& money : manager.MakeDateRange(date_from, date_to)) {
+      money.earned *= 1 - percentage / 100.0;
+    }
+  }
+};
+
+RequestHolder Request::Create(Request::Type type) {
+  switch (type) {
+    case Request::Type::COMPUTE_INCOME:
+      return make_unique<ComputeIncomeRequest>();
+    case Request::Type::EARN:
+      return make_unique<AddMoneyRequest<+1>>();
+    case Request::Type::SPEND:
+      return make_unique<AddMoneyRequest<-1>>();
+    case Request::Type::PAY_TAX:
+      return make_unique<PayTax>();
+    default:
+      return nullptr;
+  }
+}
+
+template <typename Number>
+Number ReadNumberOnLine(istream& stream) {
+  Number number;
+  stream >> number;
+  string dummy;
+  getline(stream, dummy);
+  return number;
+}
+
+optional<Request::Type> ConvertRequetTypeFromString(string_view type_str) {
+  if (const auto it = STR_TO_REQUEST_TYPE.find(type_str);
+      it != STR_TO_REQUEST_TYPE.end()) {
+    return it->second;
+  } else {
+    return nullopt;
+  }
+}
+
+RequestHolder ParseRequest(string_view request_str) {
+  const auto request_type = ConvertRequetTypeFromString(ReadToken(request_str));
+  if (!request_type) return nullptr;
+  RequestHolder request = Request::Create(*request_type);
+  if (request) request->ParseFrom(request_str);
+  return request;
+}
+
+vector<RequestHolder> ReadRequests(istream& in_stream = cin) {
+  const size_t request_count = ReadNumberOnLine<size_t>(in_stream);
+  vector<RequestHolder> requests;
+  requests.reserve(request_count);
+  for (size_t i = 0; i < request_count; ++i) {
+    string request_str;
+    getline(in_stream, request_str);
+    if (auto request = ParseRequest(request_str)) {
+      requests.push_back(move(request));
+    }
+  }
+  return requests;
+}
+
+vector<double> ProcessRequests(const vector<RequestHolder>& requests) {
+  vector<double> responses;
+  BudgetManager manager;
+  for (const auto& request_holder : requests) {
+    if (request_holder->type == Request::Type::COMPUTE_INCOME) {
+      const auto& request = static_cast<const ComputeIncomeRequest&>(*request_holder);
+      responses.push_back(request.Process(manager));
+    } else {
+      const auto& request = static_cast<const ModifyRequest&>(*request_holder);
+      request.Process(manager);
+    }
+  }
+  return responses;
+}
+
+void PrintResponses(const vector<double>& responses, ostream& stream = cout) {
+  for (const double response : responses) {
+    stream << response << endl;
+  }
+}
+
 int main () {
+  cout.precision(25);
+  const auto requests = ReadRequests();
+  const auto responses = ProcessRequests(requests);
+  PrintResponses(responses);
   return 0;
 }
