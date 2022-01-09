@@ -5,6 +5,7 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <charconv>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -48,12 +49,20 @@ string_view ReadToken(string_view& s, string_view delimiter = " ") {
 }
 
 int ConvertToInt(string_view str) {
-  // use std::from_chars when available to git rid of string copy
-  size_t pos;
-  const int result = stoi(string(str), &pos);
-  if (pos != str.length()) {
-    std::stringstream error;
-    error << "string " << str << " contains " << (str.length() - pos) << " trailing chars";
+  size_t result;
+  const auto first = str.data(), last = str.data() + str.size();
+  auto [ptr, ec] = from_chars(first, last, result);
+  if (ec == errc() && ptr != last) {
+    stringstream error;
+    error << "string " << str << " contains " << last - ptr << " trailing chars";
+    throw invalid_argument(error.str());
+  } else if (ec == errc::invalid_argument) {
+    stringstream error;
+    error << "string " << str << " not contains characters that matches the pattern";
+    throw invalid_argument(error.str());
+  } else if (ec == errc::result_out_of_range) {
+    stringstream error;
+    error << str << " parsed value is not in the range representable by int type";
     throw invalid_argument(error.str());
   }
   return result;
@@ -102,12 +111,10 @@ struct BulkMoneyAdder {
 constexpr uint8_t TAX_PERCENTAGE = 13;
 
 struct BulkTaxApplier {
-  static constexpr double FACTOR = 1.0 - TAX_PERCENTAGE / 100.0;
-  uint32_t count = 0;
+  double factor = 1.0;
 
-  double ComputeFactor() const {
-    return pow(FACTOR, count);
-  }
+  BulkTaxApplier() = default;
+  explicit BulkTaxApplier(uint8_t percentage) : factor(1.0 - percentage / 100.0) {}
 };
 
 class BulkLinearUpdater {
@@ -123,12 +130,12 @@ public:
   {}
 
   void CombineWith(const BulkLinearUpdater& other) {
-    tax_.count += other.tax_.count;
-    add_.delta = add_.delta * other.tax_.ComputeFactor() + other.add_.delta;
+    tax_.factor *= other.tax_.factor;
+    add_.delta = add_.delta * other.tax_.factor + other.add_.delta;
   }
 
   double Collapse(double origin, IndexSegment segment) const {
-    return origin * tax_.ComputeFactor() + add_.delta * segment.length();
+    return origin * tax_.factor + add_.delta * segment.length();
   }
 
 private:
@@ -273,14 +280,7 @@ public:
 
   // Weird legacy, can't wait for std::chrono::year_month_day
   time_t AsTimestamp() const {
-    std::tm t;
-    t.tm_sec  = 0;
-    t.tm_min  = 0;
-    t.tm_hour = 0;
-    t.tm_mday = day_;
-    t.tm_mon  = month_ - 1;
-    t.tm_year = year_ - 1900;
-    t.tm_isdst = 0;
+    tm t{.tm_mday = day_, .tm_mon = month_ - 1, .tm_year = year_ - 1900};
     return mktime(&t);
   }
 
@@ -393,15 +393,17 @@ struct PayTaxRequest : ModifyRequest {
   PayTaxRequest() : ModifyRequest(Type::PAY_TAX) {}
   void ParseFrom(string_view input) override {
     date_from = Date::FromString(ReadToken(input));
-    date_to = Date::FromString(input);
+    date_to = Date::FromString(ReadToken(input));
+    percentage = ConvertToInt(input);
   }
 
   void Process(BudgetManager& manager) const override {
-    manager.AddBulkOperation(MakeDateSegment(date_from, date_to), BulkTaxApplier{1});
+    manager.AddBulkOperation(MakeDateSegment(date_from, date_to), BulkTaxApplier(percentage));
   }
 
   Date date_from = START_DATE;
   Date date_to = START_DATE;
+  uint8_t percentage = 0;
 };
 
 RequestHolder Request::Create(Request::Type type) {
