@@ -25,11 +25,12 @@ string_view ReadToken(string_view& s, string_view delimiter = " ") {
   return lhs;
 }
 
+#ifdef GCC11
 // floating point version works with GCC11
-double ConverToType(string_view str) {
+double ConvertToDouble(string_view str) {
   double result;
   const auto first = str.data(), last = str.data() + str.size();
-  auto [ptr, ec] = from_chars(first, last, result, chars_format::general);
+  auto [ptr, ec] = from_chars(first, last, result);
   if (ec == errc() && ptr != last) {
     stringstream error;
     error << "string " << str << " contains " << last - ptr << " trailing chars";
@@ -45,6 +46,18 @@ double ConverToType(string_view str) {
   }
   return result;
 }
+#else
+double ConvertToDouble(string_view str) {
+  size_t pos;
+  const double result = stod(string(str), &pos);
+  if (pos != str.length()) {
+    stringstream error;
+    error << "string " << str << " contains " << str.length() - pos << " trailing chars";
+    throw invalid_argument(error.str());
+  }
+  return result;
+}
+#endif
 
 class Coordinate {
   double ltt_rad;
@@ -61,12 +74,12 @@ class Coordinate {
                                                lgt_rad(Rad(lgt_deg)) {}
 public:
   static Coordinate FromString(string_view str) {
-    const double ltt_deg = ConverToType(ReadToken(str, ", "));
-    const double lgt_deg = ConverToType(str);
+    const double ltt_deg = ConvertToDouble(ReadToken(str, ", "));
+    const double lgt_deg = ConvertToDouble(str);
     return {ltt_deg, lgt_deg};
   }
 
-  double Distance(const Coordinate& other) const {
+  double From(const Coordinate& other) const {
     double rad_dist = acos(sin(ltt_rad) * sin(other.ltt_rad) +
                            cos(ltt_rad) * cos(other.ltt_rad) *
                            cos(lgt_rad - other.lgt_rad));
@@ -74,6 +87,18 @@ public:
   }
 };
 
+double Distance(const Coordinate& lhs, const Coordinate& rhs) {
+  return lhs.From(rhs);
+}
+
+
+#ifdef TESTS
+#include "tests.h"
+#endif
 int main() {
+#ifdef TESTS
+  TEST_ALL();
+#endif
+
   return 0;
 }
