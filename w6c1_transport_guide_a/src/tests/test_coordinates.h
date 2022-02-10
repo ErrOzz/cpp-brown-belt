@@ -1,10 +1,10 @@
 #pragma once
 
-#include "bus_stops.h"
+#include "../coordinates.h"
 #include "test_runner.h"
 
 
-void TestCoordinate() {
+void TestCoordinates() {
   {
   Coordinates a = Coordinates::FromString("55.121314, 56.123456");
   Coordinates b = Coordinates::FromString("55.121314, 56.123456");
@@ -41,12 +41,4 @@ void TestCoordinate() {
   ASSERT(Distance(Ekaterinburg, Sidney) >= 13133783.66 &&
          Distance(Ekaterinburg, Sidney) <= 13133783.67);
   }
-}
-
-
-TestRunner tr;
-
-#define TEST(func) RUN_TEST(tr, func)
-#define TEST_ALL() {                              \
-  TEST(TestCoordinate);                           \
 }

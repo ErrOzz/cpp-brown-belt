@@ -1,5 +1,3 @@
-#include "bus_stops_tests.h"
-
 #include <iostream>
 #include <cmath>
 #include <memory>
@@ -11,11 +9,6 @@
 #include <vector>
 
 using namespace std;
-
-//struct Bus {
-//  string name;
-//  vector<StopPtr> route;
-//};
 
 struct Request;
 using RequestHolder = unique_ptr<Request>;
@@ -41,7 +34,7 @@ unordered_map<string_view, Request::Type> STR_TO_REQUEST_TYPE = {
 };
 
 #ifdef TESTS
-#include "bus_stops_tests.h"
+#include "tests/test_all.h"
 #endif
 int main() {
 #ifdef TESTS
