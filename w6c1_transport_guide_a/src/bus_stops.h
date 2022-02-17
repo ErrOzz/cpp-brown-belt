@@ -2,20 +2,35 @@
 
 #include "coordinates.h"
 
+#include <cassert>
+#include <memory>
 #include <string>
-#include <unordered_set>
+#include <string_view>
+#include <unordered_map>
 
-struct Stop {
+class Stop {
   std::string name;
   Coordinates location;
 
-  bool operator==(const Stop& other) const;
+public:
+  Stop(const Stop& other) = delete;
+  Stop(Stop&& other) = default;
+  Stop(std::string&& name, Coordinates&& location = {});
+
+  Stop& operator=(const Stop& other) = delete;
+  Stop& operator=(Stop&& other) = default;
+
+  friend class StopsManager;
 };
 
-struct StopHasher {
-  size_t operator()(const Stop& stop) const;
-};
+using StopHolder = std::unique_ptr<Stop>;
+using StopPtr = Stop*;
 
-class StopsManager : public std::unordered_set<Stop, StopHasher> {
-  StopsManager();
+class StopsManager {
+  std::unordered_map<std::string_view, StopHolder> manager;
+
+public:
+  StopPtr AddStop(Stop&& stop);
+  StopPtr AddStop(std::string&& name, Coordinates&& location = {});
+  
 };
