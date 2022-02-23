@@ -1,5 +1,12 @@
 #pragma once
 
-class Route : public Vector<Stop> {
+#include "bus_stops.h"
+
+#include <string>
+#include <vector>
+
+class Route {
+  std::string name;
+  std::vector<StopPtr> stops;
 
 }

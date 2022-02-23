@@ -2,24 +2,28 @@
 
 using namespace std;
 
-Stop::Stop(std::string&& name, Coordinates&& location) :
-    name(std::move(name)), location(std::move(location)) {
-  assert(name != "");
+Stop::Stop(string&& name) :
+    name(move(name)), location({}) {
+  assert(name == "");
 }
 
-StopPtr StopsManager::AddStop(Stop&& stop) {
-  StopPtr result;
-  if (auto stop_it = manager.find(stop.name); stop_it != manager.end()) {
-    stop_it->second->location = stop.location;
-    result = stop_it->second.get();
+StopPtr Stop::SetPlace(Coordinates&& location) {
+  this->location = move(location);
+  return this;
+}
+
+StopPtr StopsManager::at(const std::string& name) {
+  if (auto stop_it = manager.find(name); stop_it != manager.end()) {
+    return stop_it->second.get();
   } else {
-    auto stop_holder = std::make_unique<Stop>(std::move(stop));
-    result = stop_holder.get();
-    manager[stop_holder->name] = move(stop_holder);
+    return nullptr;
   }
-  return result;
 }
 
-StopPtr StopsManager::AddStop(std::string&& name, Coordinates&& location) {
-  return AddStop(Stop(std::move(name), std::move(location)));
+StopPtr StopsManager::operator[](std::string&& name) {
+  if (auto stop_ptr = at(name)) {
+    return stop_ptr;
+  }
+  auto stop_holder = make_unique<Stop>(Stop(move(name)));
+  return manager.emplace(stop_holder->name, move(stop_holder)).first->second.get();
 }
